@@ -1,0 +1,33 @@
+def err=null
+node("master")
+{
+try
+{
+	projectkey= "${project_key}"
+	appname= "${application_name}"
+	servicename= "${service_name}"
+	filename= "${filename}"
+	envname= "${environment}"
+	version= "${env.BUILD_NUMBER}"
+	branch= "${git_branch}"
+	baseurl= 'ssh://gitcbitbucket.glb.syfbank.com:7999'
+	giturl= "${baseurl}/${project_key}/${service_name}.git"
+	gitID= '           '
+		stage('scm')
+		{
+			echo branch;
+			echo giturl;
+			checkout([$class: 'gitscm', branches: [[name:branch]],
+			-dogeneratesubmoduleconfigurations: false,
+			extensions: [[$class: 'perbuildtag']],
+			submodulecfg: [],
+			userremoteconfigs: [[credentialsID, url: giturl]]])
+		}
+		stage('build')
+		{
+			echo pwd()
+			directory= pwd()
+			sh "mvn -- batch-mode -v -u -e clean install -f ${directory}/bundle/pom.xml -Dsurefire.usefile= false"
+		}
+}
+}
